@@ -30,9 +30,7 @@ except:
     expected_cols = df_template.drop("Target_Risk", axis=1).columns
 
 # 3. GIAO DIỆN NGƯỜI DÙNG (UI)
-st.image(
-    "https://cdn-icons-png.flaticon.com/512/2966/2966327.png", width=100
-)  # Icon y tế
+# Sử dụng emoji thay vì tải ảnh từ Internet để tránh khởi động bị treo trên Streamlit Cloud
 st.title("🏥 Hệ Thống Dự Đoán Nguy Cơ Bỏ Bê Sức Khỏe")
 st.markdown("""
 Ứng dụng AI giúp phân tích hành vi người dùng, phát hiện nhóm có nguy cơ lười đi khám bệnh định kỳ 
