@@ -11,8 +11,8 @@ st.set_page_config(
 # 2. TẢI MÔ HÌNH VÀ SCALER (Sử dụng caching để load nhanh)
 @st.cache_resource
 def load_model():
-    model = joblib.load(r"D:\DOan\best_model_random_forest.pkl")
-    scaler = joblib.load(r"best_scaler.pkl")
+    model = joblib.load("best_model_random_forest.pkl")
+    scaler = joblib.load("best_scaler.pkl")
     return model, scaler
 
 
