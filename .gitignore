@@ -1,0 +1,34 @@
+# Python và Jupyter Notebook
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.ipynb_checkpoints/
+
+# File cũ/lỗi không dùng
+app (3).py
+
+# Dataset gốc (giữ lại chỉ file cleaned)
+# Dataset gốc (giữ lại chỉ file cleaned)
+# (previously ignored `vietnam-health.csv`; now tracked if you want it)
+
+# VS Code và IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Ignore model pickle binaries (keep local copies, do not push)
+*.pkl
