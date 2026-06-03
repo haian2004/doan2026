@@ -7,15 +7,14 @@ __pycache__/
 *.egg-info/
 dist/
 build/
-*.ipynb
 *.ipynb_checkpoints/
 
 # File cũ/lỗi không dùng
 app (3).py
-notefix1.txt
 
 # Dataset gốc (giữ lại chỉ file cleaned)
-vietnam-health.csv
+# Dataset gốc (giữ lại chỉ file cleaned)
+# (previously ignored `vietnam-health.csv`; now tracked if you want it)
 
 # VS Code và IDE
 .vscode/
