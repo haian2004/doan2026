@@ -81,86 +81,88 @@ tab2, tab1 = st.tabs(["📊 Tổng Quan Dữ Liệu (Dashboard)", "🚀 Dự Đo
 with tab1:
     st.header("📋 Nhập thông tin khách hàng")
 
-    col1, col2 = st.columns(2)
+    with st.form("prediction_form"):
+        col1, col2 = st.columns(2)
 
-    with col1:
-        age_gr = st.selectbox("Độ tuổi", ["<18", "18-29", "30-39", "40-49", ">=50"])
+        with col1:
+            age_gr = st.selectbox("Độ tuổi", ["<18", "18-29", "30-39", "40-49", ">=50"])
 
-        # [CẬP NHẬT 1]: NHẬP CHIỀU CAO, CÂN NẶNG VÀ TỰ TÍNH BMI
-        col_h, col_w = st.columns(2)
-        with col_h:
-            height_cm = st.number_input(
-                "Chiều cao (cm)", min_value=50.0, max_value=250.0, value=165.0
+            # [CẬP NHẬT 1]: NHẬP CHIỀU CAO, CÂN NẶNG VÀ TỰ TÍNH BMI
+            col_h, col_w = st.columns(2)
+            with col_h:
+                height_cm = st.number_input(
+                    "Chiều cao (cm)", min_value=50.0, max_value=250.0, value=165.0
+                )
+            with col_w:
+                weight_kg = st.number_input(
+                    "Cân nặng (kg)", min_value=10.0, max_value=200.0, value=60.0
+                )
+
+            # Công thức tính BMI: Cân nặng (kg) / [Chiều cao (m)]^2
+            bmi = weight_kg / ((height_cm / 100) ** 2)
+            st.info(f"👉 **Chỉ số BMI của khách hàng:** {bmi:.2f}")
+
+            # [CẬP NHẬT 2]: VIỆT HÓA NGHỀ NGHIỆP
+            job_mapping = {
+                "Công việc ổn định (Văn phòng, Nhà nước)": "stable",
+                "Lao động tự do / Không ổn định": "unstable",
+                "Học sinh / Sinh viên": "student",
+                "Nội trợ": "housewife",
+                "Khác": "other",
+            }
+            # Hiển thị list tiếng Việt cho người dùng chọn
+            job_display = st.selectbox("Nghề nghiệp", list(job_mapping.keys()))
+            # Map ngược lại giá trị tiếng Anh để đưa vào Model tính toán
+            job = job_mapping[job_display]
+
+            health_ins = st.radio("Có Bảo hiểm y tế không?", ["Có", "Không"])
+
+        with col2:
+            habit = st.radio(
+                "Gia đình/Tổ chức có thói quen đi khám không?", ["Có", "Không"]
             )
-        with col_w:
-            weight_kg = st.number_input(
-                "Cân nặng (kg)", min_value=10.0, max_value=200.0, value=60.0
+            st_choise = st.selectbox(
+                "Khi có triệu chứng ốm, bạn thường làm gì?",
+                [
+                    "Tự tra Google (selfstudy)",
+                    "Đến phòng khám (clinic)",
+                    "Hỏi người thân (askrel)",
+                ],
             )
+            tangibles = st.slider("Mong muốn cơ sở vật chất phòng khám (1-5 sao)", 1, 5, 3)
 
-        # Công thức tính BMI: Cân nặng (kg) / [Chiều cao (m)]^2
-        bmi = weight_kg / ((height_cm / 100) ** 2)
-        st.info(f"👉 **Chỉ số BMI của khách hàng:** {bmi:.2f}")
+        # 4. XỬ LÝ DỮ LIỆU ĐẦU VÀO (PREPROCESSING CHO PREDICTION)
+        def prepare_input_data():
+            # Tạo một dataframe chứa toàn bộ giá trị 0 với các cột giống hệt tập Train
+            expected_cols = get_expected_cols()
+            input_df = pd.DataFrame(0, index=[0], columns=expected_cols)
 
-        # [CẬP NHẬT 2]: VIỆT HÓA NGHỀ NGHIỆP
-        job_mapping = {
-            "Công việc ổn định (Văn phòng, Nhà nước)": "stable",
-            "Lao động tự do / Không ổn định": "unstable",
-            "Học sinh / Sinh viên": "student",
-            "Nội trợ": "housewife",
-            "Khác": "other",
-        }
-        # Hiển thị list tiếng Việt cho người dùng chọn
-        job_display = st.selectbox("Nghề nghiệp", list(job_mapping.keys()))
-        # Map ngược lại giá trị tiếng Anh để đưa vào Model tính toán
-        job = job_mapping[job_display]
+            # Fill các giá trị do user nhập vào (Map chữ sang số y như bước Data Preprocessing)
+            age_map = {"<18": 0, "18-29": 1, "30-39": 2, "40-49": 3, ">=50": 4}
+            input_df["Age_gr_encoded"] = age_map[age_gr]
 
-        health_ins = st.radio("Có Bảo hiểm y tế không?", ["Có", "Không"])
+            input_df["BMI"] = bmi
+            input_df["HealthIns_encoded"] = 1 if health_ins == "Có" else 0
+            input_df["Habit_encoded"] = 1 if habit == "Có" else 0
+            input_df["Tangibles"] = float(tangibles)
 
-    with col2:
-        habit = st.radio(
-            "Gia đình/Tổ chức có thói quen đi khám không?", ["Có", "Không"]
-        )
-        st_choise = st.selectbox(
-            "Khi có triệu chứng ốm, bạn thường làm gì?",
-            [
-                "Tự tra Google (selfstudy)",
-                "Đến phòng khám (clinic)",
-                "Hỏi người thân (askrel)",
-            ],
-        )
-        tangibles = st.slider("Mong muốn cơ sở vật chất phòng khám (1-5 sao)", 1, 5, 3)
+            # Xử lý One-Hot Encoding cho Jobstt
+            job_col = f"Jobstt_{job}"
+            if job_col in input_df.columns:
+                input_df[job_col] = 1
 
-    # 4. XỬ LÝ DỮ LIỆU ĐẦU VÀO (PREPROCESSING CHO PREDICTION)
-    def prepare_input_data():
-        # Tạo một dataframe chứa toàn bộ giá trị 0 với các cột giống hệt tập Train
-        expected_cols = get_expected_cols()
-        input_df = pd.DataFrame(0, index=[0], columns=expected_cols)
+            # Xử lý One-Hot Encoding cho StChoise
+            choise_val = st_choise.split("(")[1].replace(")", "")
+            choise_col = f"StChoise_{choise_val}"
+            if choise_col in input_df.columns:
+                input_df[choise_col] = 1
 
-        # Fill các giá trị do user nhập vào (Map chữ sang số y như bước Data Preprocessing)
-        age_map = {"<18": 0, "18-29": 1, "30-39": 2, "40-49": 3, ">=50": 4}
-        input_df["Age_gr_encoded"] = age_map[age_gr]
+            return input_df
 
-        input_df["BMI"] = bmi
-        input_df["HealthIns_encoded"] = 1 if health_ins == "Có" else 0
-        input_df["Habit_encoded"] = 1 if habit == "Có" else 0
-        input_df["Tangibles"] = float(tangibles)
+        st.markdown("---")
+        submitted = st.form_submit_button("🚀 PHÂN TÍCH VÀ DỰ ĐOÁN NGUY CƠ")
 
-        # Xử lý One-Hot Encoding cho Jobstt
-        job_col = f"Jobstt_{job}"
-        if job_col in input_df.columns:
-            input_df[job_col] = 1
-
-        # Xử lý One-Hot Encoding cho StChoise
-        choise_val = st_choise.split("(")[1].replace(")", "")
-        choise_col = f"StChoise_{choise_val}"
-        if choise_col in input_df.columns:
-            input_df[choise_col] = 1
-
-        return input_df
-
-    # 5. NÚT BẤM DỰ ĐOÁN
-    st.markdown("---")
-    if st.button("🚀 PHÂN TÍCH VÀ DỰ ĐOÁN NGUY CƠ", use_container_width=True):
+    if submitted:
         with st.spinner("AI đang phân tích dữ liệu hành vi..."):
             # Load model chỉ khi bấm nút
             model, scaler = load_model()
