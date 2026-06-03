@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import urllib.request
 import joblib
+import re
 import pandas as pd
 import streamlit as st
 
@@ -29,21 +30,29 @@ def load_model():
     model_path = BASE_DIR / "best_model_random_forest.pkl"
     scaler_path = BASE_DIR / "best_scaler.pkl"
 
-    if not model_path.exists():
-        download_file(
-            f"{RAW_BASE}/best_model_random_forest.pkl",
-            model_path,
-        )
+    try:
+        if not model_path.exists():
+            download_file(
+                f"{RAW_BASE}/best_model_random_forest.pkl",
+                model_path,
+            )
 
-    if not scaler_path.exists():
-        download_file(
-            f"{RAW_BASE}/best_scaler.pkl",
-            scaler_path,
-        )
+        if not scaler_path.exists():
+            download_file(
+                f"{RAW_BASE}/best_scaler.pkl",
+                scaler_path,
+            )
 
-    model = joblib.load(model_path)
-    scaler = joblib.load(scaler_path)
-    return model, scaler
+        if not model_path.exists() or not scaler_path.exists():
+            raise FileNotFoundError(
+                "Model hoặc scaler không tồn tại sau khi cố tải. Hãy kiểm tra RAW_BASE hoặc upload file vào repo."
+            )
+
+        model = joblib.load(model_path)
+        scaler = joblib.load(scaler_path)
+        return model, scaler
+    except Exception as exc:
+        raise RuntimeError(f"Lỗi khi tải model/scaler: {exc}") from exc
 
 
 # Lấy danh sách cột chuẩn (lazy load - chỉ tính khi cần)
@@ -151,8 +160,9 @@ with tab1:
             if job_col in input_df.columns:
                 input_df[job_col] = 1
 
-            # Xử lý One-Hot Encoding cho StChoise
-            choise_val = st_choise.split("(")[1].replace(")", "")
+            # Xử lý One-Hot Encoding cho StChoise (parse an toàn giá trị trong ngoặc)
+            m = re.search(r"\(([^)]+)\)", st_choise)
+            choise_val = m.group(1) if m else st_choise.replace(" ", "_")
             choise_col = f"StChoise_{choise_val}"
             if choise_col in input_df.columns:
                 input_df[choise_col] = 1
@@ -166,28 +176,35 @@ with tab1:
     if submitted:
         with result_container:
             with st.spinner("AI đang phân tích dữ liệu hành vi..."):
-                # Load model chỉ khi bấm nút
-                model, scaler = load_model()
-                user_data = prepare_input_data()
-
-                # Chuẩn hóa (Scale)
-                user_data_scaled = scaler.transform(user_data)
-
-                # Dự đoán xác suất
-                probability = model.predict_proba(user_data_scaled)[0][1]
-
-                # Áp dụng ngưỡng 0.4 mà chúng ta đã chốt
-                threshold = 0.4
-
-                st.markdown("### 📊 Kết Quả Phân Tích:")
-                if probability >= threshold:
+                # Load model chỉ khi bấm nút (bắt lỗi rõ ràng để UI không crash)
+                try:
+                    model, scaler = load_model()
+                except Exception as exc:
+                    st.exception(exc)
                     st.error(
-                        f"⚠️ **NGUY CƠ CAO!** Khách hàng có {probability * 100:.1f}% xác suất không chủ động đi khám bệnh."
+                        "Không thể tải model/scaler. Hãy upload `best_model_random_forest.pkl` và `best_scaler.pkl` vào cùng thư mục với ứng dụng, hoặc kiểm tra quyền truy cập mạng."
                     )
                 else:
-                    st.success(
-                        f"✅ **AN TOÀN!** Khách hàng có ý thức chủ động đi khám sức khỏe (Nguy cơ chỉ: {probability * 100:.1f}%)."
-                    )
+                    user_data = prepare_input_data()
+
+                    # Chuẩn hóa (Scale)
+                    user_data_scaled = scaler.transform(user_data)
+
+                    # Dự đoán xác suất
+                    probability = model.predict_proba(user_data_scaled)[0][1]
+
+                    # Áp dụng ngưỡng 0.4 mà chúng ta đã chốt
+                    threshold = 0.4
+
+                    st.markdown("### 📊 Kết Quả Phân Tích:")
+                    if probability >= threshold:
+                        st.error(
+                            f"⚠️ **NGUY CƠ CAO!** Khách hàng có {probability * 100:.1f}% xác suất không chủ động đi khám bệnh."
+                        )
+                    else:
+                        st.success(
+                            f"✅ **AN TOÀN!** Khách hàng có ý thức chủ động đi khám sức khỏe (Nguy cơ chỉ: {probability * 100:.1f}%)."
+                        )
     else:
         result_container.info("Nhấn nút dự đoán để xem kết quả.")
 
