@@ -100,7 +100,7 @@ with tab1:
 
             # Công thức tính BMI: Cân nặng (kg) / [Chiều cao (m)]^2
             bmi = weight_kg / ((height_cm / 100) ** 2)
-            st.info(f"👉 **Chỉ số BMI của khách hàng:** {bmi:.2f}")
+            st.metric("Chỉ số BMI", f"{bmi:.2f}")
 
             # [CẬP NHẬT 2]: VIỆT HÓA NGHỀ NGHIỆP
             job_mapping = {
@@ -162,30 +162,34 @@ with tab1:
         st.markdown("---")
         submitted = st.form_submit_button("🚀 PHÂN TÍCH VÀ DỰ ĐOÁN NGUY CƠ")
 
+    result_container = st.container()
     if submitted:
-        with st.spinner("AI đang phân tích dữ liệu hành vi..."):
-            # Load model chỉ khi bấm nút
-            model, scaler = load_model()
-            user_data = prepare_input_data()
+        with result_container:
+            with st.spinner("AI đang phân tích dữ liệu hành vi..."):
+                # Load model chỉ khi bấm nút
+                model, scaler = load_model()
+                user_data = prepare_input_data()
 
-            # Chuẩn hóa (Scale)
-            user_data_scaled = scaler.transform(user_data)
+                # Chuẩn hóa (Scale)
+                user_data_scaled = scaler.transform(user_data)
 
-            # Dự đoán xác suất
-            probability = model.predict_proba(user_data_scaled)[0][1]
+                # Dự đoán xác suất
+                probability = model.predict_proba(user_data_scaled)[0][1]
 
-            # Áp dụng ngưỡng 0.4 mà chúng ta đã chốt
-            threshold = 0.4
+                # Áp dụng ngưỡng 0.4 mà chúng ta đã chốt
+                threshold = 0.4
 
-            st.markdown("### 📊 Kết Quả Phân Tích:")
-            if probability >= threshold:
-                st.error(
-                    f"⚠️ **NGUY CƠ CAO!** Khách hàng có {probability * 100:.1f}% xác suất không chủ động đi khám bệnh."
-                )
-            else:
-                st.success(
-                    f"✅ **AN TOÀN!** Khách hàng có ý thức chủ động đi khám sức khỏe (Nguy cơ chỉ: {probability * 100:.1f}%)."
-                )
+                st.markdown("### 📊 Kết Quả Phân Tích:")
+                if probability >= threshold:
+                    st.error(
+                        f"⚠️ **NGUY CƠ CAO!** Khách hàng có {probability * 100:.1f}% xác suất không chủ động đi khám bệnh."
+                    )
+                else:
+                    st.success(
+                        f"✅ **AN TOÀN!** Khách hàng có ý thức chủ động đi khám sức khỏe (Nguy cơ chỉ: {probability * 100:.1f}%)."
+                    )
+    else:
+        result_container.info("Nhấn nút dự đoán để xem kết quả.")
 
 # ------------------------------------------
 # TAB 2: GIAO DIỆN BIỂU ĐỒ (DASHBOARD)
@@ -207,14 +211,14 @@ with tab2:
         # Dùng ảnh local 11.jpg cho biểu đồ 1
         chart1_path = BASE_DIR / "11.jpg"
         if chart1_path.exists():
-            st.image(chart1_path, use_container_width=True)
+            st.image(chart1_path, width=580)
         else:
             st.warning(
                 "Hình ảnh 11.jpg chưa có trong thư mục dự án. Vui lòng đặt file vào cùng thư mục với app."
             )
             st.image(
                 "https://via.placeholder.com/700x400.png?text=Bi%E1%BB%83u+%C4%91%C3%B2+AfterIT+missing",
-                use_container_width=True,
+                width=580,
             )
 
     with chart_col2:
@@ -225,12 +229,12 @@ with tab2:
         # Dùng ảnh local 22.jpg cho biểu đồ 2
         chart2_path = BASE_DIR / "22.jpg"
         if chart2_path.exists():
-            st.image(chart2_path, use_container_width=True)
+            st.image(chart2_path, width=580)
         else:
             st.warning(
                 "Hình ảnh 22.jpg chưa có trong thư mục dự án. Vui lòng đặt file vào cùng thư mục với app."
             )
             st.image(
                 "https://via.placeholder.com/700x400.png?text=Bi%E1%BB%83u+%C4%91%C3%B2+UseIT+missing",
-                use_container_width=True,
+                width=580,
             )
