@@ -1,0 +1,33 @@
+# Python và Jupyter Notebook
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.ipynb
+*.ipynb_checkpoints/
+
+# File cũ/lỗi không dùng
+app.py
+app (3).py
+notefix1.txt
+
+# Dataset gốc (giữ lại chỉ file cleaned)
+vietnam-health.csv
+
+# VS Code và IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual Environment
+.venv/
+venv/
+env/
